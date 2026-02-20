@@ -19,6 +19,7 @@ class SkillCreate(BaseModel):
     years_experience: float | None = None
     description: str = ""
     tags: list[str] = []
+    translations: dict[str, str] = {}
     status: SkillStatus = "confirmed"
 
 
@@ -29,6 +30,7 @@ class SkillUpdate(BaseModel):
     years_experience: float | None = None
     description: str | None = None
     tags: list[str] | None = None
+    translations: dict[str, str] | None = None
     status: SkillStatus | None = None
 
 
@@ -50,6 +52,13 @@ async def list_skills():
 @router.post("", response_model=Skill)
 async def create_skill(data: SkillCreate):
     library = _load_library()
+
+    # Prevent duplicates (case-insensitive)
+    normalized = data.name.strip().lower()
+    for existing in library.skills:
+        if existing.name.strip().lower() == normalized:
+            raise HTTPException(409, f"Skill '{existing.name}' already exists")
+
     skill = Skill(
         id=generate_id(),
         name=data.name,
@@ -58,6 +67,7 @@ async def create_skill(data: SkillCreate):
         years_experience=data.years_experience,
         description=data.description,
         tags=data.tags,
+        translations=data.translations,
         status=data.status,
         source="manual",
     )
@@ -99,6 +109,8 @@ async def extract_skills_from_document(doc_id: str):
         raise HTTPException(404, "Document not found")
 
     skills = await extractor.extract_skills_from_text(doc.extracted_text, doc_id)
+    if not skills:
+        raise HTTPException(422, "No skills could be extracted from this document")
     library = extractor.merge_skills_into_library(skills)
 
     # Mark document as skills-extracted

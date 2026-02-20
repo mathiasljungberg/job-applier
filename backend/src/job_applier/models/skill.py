@@ -29,6 +29,7 @@ class Skill(BaseModel):
     description: str = ""
     evidence: list[str] = []  # references to source documents
     tags: list[str] = []
+    translations: dict[str, str] = {}  # lang_code -> translated name
     status: SkillStatus = "confirmed"
     source: SkillSource = "manual"
     created_at: datetime = Field(default_factory=datetime.now)

@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile
 
 from job_applier.models.document import Document, DocumentType
+from job_applier.services.extractor import extractor
 from job_applier.services.parser import parser
 from job_applier.services.storage import generate_id, storage
 
@@ -28,6 +29,17 @@ async def upload_document(file: UploadFile, doc_type: str = "cv"):
     full_path = storage.base_dir / original_path
     extracted_text = await parser.parse_file(full_path)
 
+    # Auto-extract skills from CVs
+    skills_extracted = False
+    if doc_type == "cv" and extracted_text.strip():
+        try:
+            skills = await extractor.extract_skills_from_text(extracted_text, doc_id)
+            if skills:
+                extractor.merge_skills_into_library(skills)
+                skills_extracted = True
+        except Exception:
+            pass  # Skill extraction is best-effort; document upload still succeeds
+
     # Save metadata
     doc = Document(
         id=doc_id,
@@ -35,6 +47,7 @@ async def upload_document(file: UploadFile, doc_type: str = "cv"):
         filename=filename,
         original_path=str(original_path),
         extracted_text=extracted_text,
+        skills_extracted=skills_extracted,
     )
     metadata_path = Path("library") / subdir / "metadata" / f"{doc_id}.json"
     storage.save_model(metadata_path, doc)

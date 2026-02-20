@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from job_applier.config import settings
 from job_applier.services.providers.base import LLMProvider
+from job_applier.services.usage import usage_tracker
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -25,7 +26,7 @@ class AnthropicProvider(LLMProvider):
 
         response = await self.client.messages.create(
             model=model,
-            max_tokens=4096,
+            max_tokens=8192,
             tools=[
                 {
                     "name": "extract",
@@ -35,6 +36,11 @@ class AnthropicProvider(LLMProvider):
             ],
             tool_choice={"type": "tool", "name": "extract"},
             messages=[{"role": "user", "content": prompt}],
+        )
+
+        usage_tracker.record(
+            "anthropic", model, "extract",
+            response.usage.input_tokens, response.usage.output_tokens,
         )
 
         for block in response.content:
@@ -51,6 +57,10 @@ class AnthropicProvider(LLMProvider):
             model=model,
             max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
+        )
+        usage_tracker.record(
+            "anthropic", model, "generate",
+            response.usage.input_tokens, response.usage.output_tokens,
         )
         return response.content[0].text
 
@@ -72,6 +82,11 @@ class AnthropicProvider(LLMProvider):
         async with self.client.messages.stream(**kwargs) as stream:
             async for text in stream.text_stream:
                 yield text
+            final = await stream.get_final_message()
+            usage_tracker.record(
+                "anthropic", model, "chat",
+                final.usage.input_tokens, final.usage.output_tokens,
+            )
 
     async def describe_image(
         self, image_data: bytes, media_type: str, prompt: str, model: str | None = None
@@ -97,5 +112,9 @@ class AnthropicProvider(LLMProvider):
                     ],
                 }
             ],
+        )
+        usage_tracker.record(
+            "anthropic", model, "image",
+            response.usage.input_tokens, response.usage.output_tokens,
         )
         return response.content[0].text

@@ -44,6 +44,7 @@ export interface Skill {
   description: string;
   evidence: string[];
   tags: string[];
+  translations: Record<string, string>;
   status: SkillStatus;
   source: SkillSource;
   created_at: string;

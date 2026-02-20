@@ -11,6 +11,10 @@ from job_applier.services.storage import generate_id, storage
 router = APIRouter(prefix="/api/applications", tags=["applications"])
 
 
+class ApplicationCreate(BaseModel):
+    job_id: str
+
+
 class ApplicationUpdate(BaseModel):
     status: ApplicationStatus | None = None
     notes: str | None = None
@@ -25,6 +29,23 @@ class ApplicationWithJob(BaseModel):
     application: Application
     job_title: str = ""
     company: str = ""
+
+
+@router.post("", response_model=Application)
+async def create_application(data: ApplicationCreate):
+    """Create a new application for a job posting."""
+    # Verify the job exists
+    job = storage.load_model(
+        storage.base_dir / "jobs" / data.job_id / "posting.json", JobPosting
+    )
+    if not job:
+        raise HTTPException(404, "Job not found")
+
+    app = Application(id=generate_id(), job_id=data.job_id)
+    app_dir = storage.base_dir / "applications" / app.id
+    app_dir.mkdir(parents=True, exist_ok=True)
+    storage.save_model(app_dir / "application.json", app)
+    return app
 
 
 @router.get("", response_model=list[ApplicationWithJob])

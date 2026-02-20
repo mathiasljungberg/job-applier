@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Briefcase, FileText, BookOpen, Target, LayoutDashboard } from "lucide-react";
 import DashboardPage from "./pages/DashboardPage";
 import NewApplicationPage from "./pages/NewApplicationPage";
+import ApplicationPage from "./pages/ApplicationPage";
 import LibraryPage from "./pages/LibraryPage";
 import SkillsPage from "./pages/SkillsPage";
 import TrackingPage from "./pages/TrackingPage";
@@ -53,6 +54,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/new" element={<NewApplicationPage />} />
+            <Route path="/application/:id" element={<ApplicationPage />} />
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/skills" element={<SkillsPage />} />
             <Route path="/tracking" element={<TrackingPage />} />

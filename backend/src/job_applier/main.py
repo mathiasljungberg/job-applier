@@ -52,6 +52,25 @@ async def health_check():
     }
 
 
+@app.get("/api/usage")
+async def get_usage():
+    from job_applier.services.usage import usage_tracker
+
+    records = usage_tracker.get_records()
+    summary = usage_tracker.get_summary()
+    return {
+        "records": [r.model_dump(mode="json") for r in records],
+        "summary": summary.model_dump(),
+    }
+
+
+@app.get("/api/usage/summary")
+async def get_usage_summary():
+    from job_applier.services.usage import usage_tracker
+
+    return usage_tracker.get_summary().model_dump()
+
+
 @app.get("/api/llm/test")
 async def test_llm():
     """Verify that the LLM connection works by making a minimal API call."""

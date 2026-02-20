@@ -12,8 +12,15 @@ async function request<T>(
     ...options,
   });
   if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`API error ${res.status}: ${error}`);
+    const text = await res.text();
+    let message: string;
+    try {
+      const body = JSON.parse(text);
+      message = body.detail || JSON.stringify(body);
+    } catch {
+      message = text || `API error ${res.status}`;
+    }
+    throw new Error(message);
   }
   return res.json();
 }
@@ -70,4 +77,18 @@ export const api = {
       response?: string;
       message?: string;
     }>("/llm/test"),
+
+  getUsageSummary: () =>
+    request<{
+      total_calls: number;
+      total_input_tokens: number;
+      total_output_tokens: number;
+      total_cost: number;
+      by_model: Record<string, {
+        calls: number;
+        input_tokens: number;
+        output_tokens: number;
+        cost: number;
+      }>;
+    }>("/usage/summary"),
 };

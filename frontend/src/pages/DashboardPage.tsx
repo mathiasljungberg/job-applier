@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/api/client";
-import { FileText, Plus, BookOpen, Target, Briefcase } from "lucide-react";
+import { FileText, Plus, BookOpen, Target, Briefcase, Activity } from "lucide-react";
 import type { Document, SkillLibrary, Application } from "@/types";
 
 interface ApplicationWithJob {
@@ -45,6 +45,11 @@ export default function DashboardPage() {
   const { data: applications = [] } = useQuery({
     queryKey: ["applications"],
     queryFn: () => api.get<ApplicationWithJob[]>("/applications"),
+  });
+
+  const { data: usageSummary } = useQuery({
+    queryKey: ["usage-summary"],
+    queryFn: () => api.getUsageSummary(),
   });
 
   const skills = skillsData?.skills ?? [];
@@ -143,6 +148,63 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* LLM Usage */}
+      {usageSummary && usageSummary.total_calls > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">LLM Usage</h2>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Usage Summary</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 grid-cols-3">
+                <div>
+                  <p className="text-2xl font-bold">{usageSummary.total_calls}</p>
+                  <p className="text-xs text-muted-foreground">API calls</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {((usageSummary.total_input_tokens + usageSummary.total_output_tokens) / 1000).toFixed(1)}k
+                  </p>
+                  <p className="text-xs text-muted-foreground">Total tokens</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">${usageSummary.total_cost.toFixed(4)}</p>
+                  <p className="text-xs text-muted-foreground">Estimated cost</p>
+                </div>
+              </div>
+              {Object.keys(usageSummary.by_model).length > 0 && (
+                <div className="text-sm">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-muted-foreground text-xs">
+                        <th className="text-left font-medium pb-1">Model</th>
+                        <th className="text-right font-medium pb-1">Calls</th>
+                        <th className="text-right font-medium pb-1">Tokens</th>
+                        <th className="text-right font-medium pb-1">Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(usageSummary.by_model).map(([model, stats]) => (
+                        <tr key={model}>
+                          <td className="py-0.5">{model}</td>
+                          <td className="text-right">{stats.calls}</td>
+                          <td className="text-right">
+                            {((stats.input_tokens + stats.output_tokens) / 1000).toFixed(1)}k
+                          </td>
+                          <td className="text-right">${stats.cost.toFixed(4)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -181,14 +182,22 @@ export default function TrackingPage() {
                     )}
                   </div>
 
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteMutation.mutate(selected.application.id)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Application
-                  </Button>
+                  <div className="flex gap-2">
+                    <Link to={`/application/${selected.application.id}`}>
+                      <Button size="sm">
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Continue Application
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(selected.application.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 

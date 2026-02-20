@@ -13,14 +13,10 @@ from job_applier.services.storage import generate_id, storage
 class ExtractedSkillItem(BaseModel):
     name: str
     category: str = "other"
-    proficiency: str = ""
-    years_experience: float | None = None
-    description: str = ""
-    tags: list[str] = []
 
 
 class ExtractedSkills(BaseModel):
-    skills: list[ExtractedSkillItem]
+    skills: list[ExtractedSkillItem] = []
 
 
 class ExtractorService:
@@ -40,11 +36,7 @@ class ExtractorService:
                     "soft_skills", "domain_knowledge", "tools",
                     "certifications", "other"
                 ) else "other",
-                proficiency=item.proficiency,
-                years_experience=item.years_experience,
-                description=item.description,
                 evidence=[source_doc_id] if source_doc_id else [],
-                tags=item.tags,
                 status="confirmed",
                 source="extracted",
             )
@@ -57,12 +49,21 @@ class ExtractorService:
 
     def merge_skills_into_library(self, new_skills: list[Skill]) -> SkillLibrary:
         library = self._load_library()
-        existing_names = {s.name.lower() for s in library.skills}
+        existing_by_name: dict[str, Skill] = {
+            s.name.lower(): s for s in library.skills
+        }
 
         for skill in new_skills:
-            if skill.name.lower() not in existing_names:
+            key = skill.name.lower()
+            if key in existing_by_name:
+                # Merge new translations into existing skill
+                existing = existing_by_name[key]
+                for lang, translation in skill.translations.items():
+                    if lang not in existing.translations:
+                        existing.translations[lang] = translation
+            else:
                 library.skills.append(skill)
-                existing_names.add(skill.name.lower())
+                existing_by_name[key] = skill
 
         library.updated_at = datetime.now()
         self._save_library(library)

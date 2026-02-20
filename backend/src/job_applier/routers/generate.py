@@ -73,6 +73,15 @@ async def generate_document(doc_type: str, data: GenerateRequest):
     }
 
 
+@router.get("/html/{app_id}/{doc_type}")
+async def get_document_html(app_id: str, doc_type: str):
+    """Get raw HTML content of a generated document (for rehydrating the editor)."""
+    html_path = storage.base_dir / "applications" / app_id / f"{doc_type}.html"
+    if not html_path.exists():
+        raise HTTPException(404, "Document not generated yet")
+    return {"html": html_path.read_text(encoding="utf-8"), "doc_type": doc_type}
+
+
 @router.get("/preview/{app_id}/{doc_type}", response_class=HTMLResponse)
 async def preview_document(app_id: str, doc_type: str):
     """Get HTML preview of a generated document."""

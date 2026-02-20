@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileText, Trash2, Eye } from "lucide-react";
+import { Upload, FileText, Trash2, Eye, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ export default function LibraryPage() {
       api.upload<Document>("/library/upload", file, { doc_type: uploadType }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["skills"] });
     },
   });
 
@@ -32,6 +33,14 @@ export default function LibraryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setSelectedDoc(null);
+    },
+  });
+
+  const extractMutation = useMutation({
+    mutationFn: (docId: string) => api.post(`/skills/extract/${docId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["skills"] });
     },
   });
 
@@ -83,7 +92,7 @@ export default function LibraryPage() {
             <input {...getInputProps()} />
             <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
             {uploadMutation.isPending ? (
-              <p className="text-muted-foreground">Uploading and extracting text...</p>
+              <p className="text-muted-foreground">Uploading and extracting skills...</p>
             ) : isDragActive ? (
               <p className="text-muted-foreground">Drop files here...</p>
             ) : (
@@ -92,6 +101,11 @@ export default function LibraryPage() {
               </p>
             )}
           </div>
+          {extractMutation.isError && (
+            <p className="text-sm text-destructive mt-2">
+              Failed to extract skills: {extractMutation.error.message}
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -116,6 +130,8 @@ export default function LibraryPage() {
                     selected={selectedDoc?.id === doc.id}
                     onSelect={() => setSelectedDoc(doc)}
                     onDelete={() => deleteMutation.mutate(doc.id)}
+                    onExtract={!doc.skills_extracted ? () => extractMutation.mutate(doc.id) : undefined}
+                    isExtracting={extractMutation.isPending && extractMutation.variables === doc.id}
                   />
                 ))
               )}
@@ -172,11 +188,15 @@ function DocumentCard({
   selected,
   onSelect,
   onDelete,
+  onExtract,
+  isExtracting,
 }: {
   doc: Document;
   selected: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onExtract?: () => void;
+  isExtracting?: boolean;
 }) {
   return (
     <Card
@@ -194,9 +214,23 @@ function DocumentCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={doc.skills_extracted ? "default" : "secondary"}>
-            {doc.skills_extracted ? "Skills extracted" : "Pending"}
-          </Badge>
+          {onExtract && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isExtracting}
+              onClick={(e) => {
+                e.stopPropagation();
+                onExtract();
+              }}
+            >
+              <Sparkles className="h-3 w-3 mr-1" />
+              {isExtracting ? "Extracting..." : "Extract Skills"}
+            </Button>
+          )}
+          {doc.skills_extracted && (
+            <Badge variant="default">Skills extracted</Badge>
+          )}
           <Button
             variant="ghost"
             size="sm"

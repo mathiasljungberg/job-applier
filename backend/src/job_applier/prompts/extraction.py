@@ -1,28 +1,12 @@
 SKILL_EXTRACTION_PROMPT = """\
-Analyze the following document (a CV or cover letter) and extract all skills mentioned.
-
-For each skill, determine:
-- name: The skill name (e.g., "Python", "Project Management", "Docker")
+Extract all skills from this document. For each skill provide:
+- name: Skill name in English (e.g., "Python", "Project Management")
 - category: One of: programming_languages, frameworks, devops, soft_skills, domain_knowledge, tools, certifications, other
-- proficiency: Inferred level (e.g., "expert", "advanced", "intermediate", "beginner") based on context
-- years_experience: Estimated years if mentioned or inferable, otherwise null
-- description: Brief context of how the skill is used, based on the document
-- tags: Related keywords
 
-Document text:
+Document:
 ---
 {text}
 ---
-
-Extract ALL skills, including:
-- Programming languages and frameworks
-- DevOps tools and platforms
-- Soft skills and leadership abilities
-- Domain knowledge (industries, methodologies)
-- Tools and software
-- Certifications and qualifications
-
-Be thorough — extract every skill mentioned or strongly implied.
 """
 
 JOB_EXTRACTION_PROMPT = """\

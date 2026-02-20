@@ -72,10 +72,9 @@ export default function GeneratePanel({
               onChange={(e) => setConfig({ ...config, language: e.target.value })}
             >
               <option value="en">English</option>
-              <option value="da">Danish</option>
-              <option value="de">German</option>
-              <option value="fr">French</option>
+              <option value="sv">Swedish</option>
               <option value="es">Spanish</option>
+              <option value="pt">Portuguese</option>
             </select>
           </div>
           <div>

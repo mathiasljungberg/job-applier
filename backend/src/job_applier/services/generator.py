@@ -36,7 +36,8 @@ class GeneratorService:
         skills_text = []
         for s in library.skills:
             if s.status == "confirmed":
-                line = f"- {s.name}"
+                display_name = s.translations.get(config.language, s.name)
+                line = f"- {display_name}"
                 if s.proficiency:
                     line += f" ({s.proficiency})"
                 if s.description:
